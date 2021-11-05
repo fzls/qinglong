@@ -29,3 +29,6 @@
 /manual_log
 /scripts
 /bak
+
+.idea/
+data/
