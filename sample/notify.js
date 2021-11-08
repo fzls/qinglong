@@ -18,9 +18,9 @@ const timeout = 15000; //超时时间(单位毫秒)
 //gobot_token 填写在go-cqhttp文件设置的访问密钥
 //gobot_qq 填写推送到个人QQ或者QQ群号
 //go-cqhttp相关API https://docs.go-cqhttp.org/api
-let GOBOT_URL = ''; // 推送到个人QQ: http://127.0.0.1/send_private_msg  群：http://127.0.0.1/send_group_msg 
+let GOBOT_URL = ''; // 推送到个人QQ: http://127.0.0.1/send_private_msg  群：http://127.0.0.1/send_group_msg
 let GOBOT_TOKEN = ''; //访问密钥
-let GOBOT_QQ = ''; // 如果GOBOT_URL设置 /send_private_msg 则需要填入 user_id=个人QQ 相反如果是 /send_group_msg 则需要填入 group_id=QQ群 
+let GOBOT_QQ = ''; // 如果GOBOT_URL设置 /send_private_msg 则需要填入 user_id=个人QQ 相反如果是 /send_group_msg 则需要填入 group_id=QQ群
 
 // =======================================微信server酱通知设置区域===========================================
 //此处填你申请的SCKEY.
@@ -208,7 +208,7 @@ function gobotNotify(text, desp, time = 2100) {
     if (GOBOT_URL) {
       const options = {
         url: `${GOBOT_URL}?access_token=${GOBOT_TOKEN}&${GOBOT_QQ}`,
-        json: {message:`${text}\n${desp}`},
+        json: {message:`${encodeURIComponent(text)}\n${encodeURIComponent(desp)}`},
         headers: {
           'Content-Type': 'application/json',
         },
