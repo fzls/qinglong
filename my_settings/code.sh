@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-## Build 20210722-001
+## Build 20211009-001
 
 ## 导入通用变量与函数
 dir_shell=/ql/shell
@@ -15,10 +15,14 @@ repo3='he1pu_JDHelp'                               #预设的 he1pu 仓库
 repo4='shufflewzc_faker2'                          #预设的 shufflewzc 仓库
 repo5='Wenmoux_scripts_wen_chinnkarahoi'           #预设的 Wenmoux 仓库，用于读取口袋书店互助码。需提前拉取温某人的仓库或口袋书店脚本并完整运行。
 repo6='Aaron-lv_sync_jd_scripts'                   #预设的 Aaron-lv 仓库
-repo=$repo4                                        #默认调用 shufflewzc 仓库脚本日志
+repo7='smiek2221_scripts'                          #预设的 smiek2221 仓库
+repo=$repo4                                        #默认调用 shufflewzc_faker2 仓库脚本日志
 
 ## 调试模式开关，默认是0，表示关闭；设置为1，表示开启
 DEBUG="1"
+
+## 本脚本限制的最大线程数量
+proc_num="8"
 
 ## 备份配置文件开关，默认是1，表示开启；设置为0，表示关闭。备份路径 /ql/config/bak/
 BACKUP="1"
@@ -68,13 +72,14 @@ diy_help_rules(){
 BreakHelpType="0"                  ## 屏蔽模式
 BreakHelpNum="4 9-14 15~18 19_21"  ## 屏蔽账号序号或序号区间
 
-## 定义是否自动更新配置文件中的互助码和互助规则，默认为1，表示更新；留空或其他数值表示不更新。
+## 定义是否自动更新配置文件中的互助码和互助规则
+## 默认为 UpdateType="1" 表示更新互助码和互助规则；UpdateType="2" 表示只更新互助码，不更新互助规则；UpdateType="3" 表示只更新互助规则，不更新互助码；留空或其他数值表示不更新。
 UpdateType="1"
 
 ## 定义是否自动安装或修复缺失的依赖，默认为1，表示自动修复；留空或其他数值表示不修复。
 FixDependType="1"
 ## 定义监控修复的依赖名称
-package_name="canvas png-js date-fns axios crypto-js ts-md5 tslib @types/node dotenv typescript fs require tslib"
+package_name="canvas png-js date-fns axios crypto-js ts-md5 tslib @types/node dotenv typescript fs require tslib jsdom"
 
 ## 需组合的环境变量列表，env_name需要和var_name一一对应，如何有新活动按照格式添加(不懂勿动)
 env_name=(
@@ -129,11 +134,12 @@ name_js=(
   "$repo"_jd_bookshop
   "$repo"_jd_cash
   "$repo"_jd_sgmh
-  "$repo6"_jd_cfd
+  "$repo"_jd_cfd
   "$repo"_jd_health
   "$repo"_jd_carnivalcity
   "$repo"_jd_city
-  "$repo4"_jd_moneyTree_heip
+  "$repo"_jd_moneyTree_heip
+  "$repo"_jd_cfd
 )
 
 name_config=(
@@ -153,6 +159,7 @@ name_config=(
   Carni
   City
   MoneyTree
+  TokenJxnc
 )
 
 name_chinese=(
@@ -172,18 +179,6 @@ name_chinese=(
   京东手机狂欢城
   城城领现金
   摇钱树
-)
-
-#仅输出互助码的环境变量
-name_js_only=(
-  "$repo6"_jd_cfd
-)
-
-name_config_only=(
-  TokenJxnc
-)
-
-name_chinese_only=(
   京喜token
 )
 
@@ -194,6 +189,7 @@ gen_pt_pin_array() {
   local tmp1 tmp2 i pt_pin_temp
   for i in "${!array[@]}"; do
     pt_pin_temp=$(echo ${array[i]} | perl -pe "{s|.*pt_pin=([^; ]+)(?=;?).*|\1|; s|%|\\\x|g}")
+    remark_name[i]=$(cat $dir_db/env.db | grep ${array[i]} | perl -pe "{s|.*remarks\":\"([^\"]+).*|\1|g}" | tail -1)
     [[ $pt_pin_temp == *\\x* ]] && pt_pin[i]=$(printf $pt_pin_temp) || pt_pin[i]=$pt_pin_temp
   done
 }
@@ -259,7 +255,7 @@ export_codes_sub() {
                             done
                             tmp_for_other="$tmp_for_other@\${$config_name_my$j}"
                         else
-                            echo -e "\n#$cur_time 变量值填写不规范，请检查后重试！"
+                            echo -e "\n#【`date +%X`】 变量值填写不规范，请检查后重试！"
                             tmp_for_other="$tmp_for_other@\${$config_name_my$j}"
                         fi
                     else
@@ -293,7 +289,7 @@ export_codes_sub() {
                                 done
                                 tmp_for_other="$tmp_for_other@\${$config_name_my$k}"
                             else
-                                echo -e "\n#$cur_time 变量值填写不规范，请检查后重试！"
+                                echo -e "\n#【`date +%X`】 变量值填写不规范，请检查后重试！"
                                 tmp_for_other="$tmp_for_other@\${$config_name_my$k}"
                             fi
                         else
@@ -320,7 +316,7 @@ export_codes_sub() {
                                 done
                                 tmp_for_other="$tmp_for_other@\${$config_name_my$n}"
                             else
-                                echo -e "\n#$cur_time 变量值填写不规范，请检查后重试！"
+                                echo -e "\n#【`date +%X`】 变量值填写不规范，请检查后重试！"
                                 tmp_for_other="$tmp_for_other@\${$config_name_my$n}"
                             fi
                         else
@@ -337,7 +333,7 @@ export_codes_sub() {
                 for ((m = 0; m < ${#pt_pin[*]}; m++)); do
                     tmp_for_other=""
                     j=$((m + 1))
-                    for ((n = 0; n < ${#pt_pin[*]}; n++)); do
+                    for ((n = 0; n < $user_sum; n++)); do
                         [[ $m -eq $n ]] && continue
                         k=$((n + 1))
                         if [[ $BreakHelpType = "1" ]]; then
@@ -347,7 +343,7 @@ export_codes_sub() {
                                 done
                                 tmp_for_other="$tmp_for_other@\${$config_name_my$k}"
                             else
-                                echo -e "\n#$cur_time 变量值填写不规范，请检查后重试！"
+                                echo -e "\n#【`date +%X`】 变量值填写不规范，请检查后重试！"
                                 tmp_for_other="$tmp_for_other@\${$config_name_my$k}"
                             fi
                         else
@@ -360,22 +356,22 @@ export_codes_sub() {
             esac
         fi
     else
-        echo "#$cur_time 未运行过 $task_name.js 脚本，未产生日志"
+        echo "#【`date +%X`】 未运行过 $task_name.js 脚本，未产生日志"
     fi
 }
 
 ## 汇总输出
 export_all_codes() {
     gen_pt_pin_array
-    [[ $DEBUG = "1" ]] && echo -e "\n#$cur_time 当前 code.sh 的线程数量：$ps_num"
-    [[ $DEBUG = "1" ]] && echo -e "\n#$cur_time 预设的 JD_COOKIE 数量：`echo $JD_COOKIE | grep -o 'pt_key' | wc -l`"
-    [[ $DEBUG = "1" ]] && echo -e "\n#$cur_time 预设的 JD_COOKIE 环境变量数量：`echo $JD_COOKIE | sed 's/&/\n/g' | wc -l`"
-    [[ $DEBUG = "1" && "$(echo $JD_COOKIE | sed 's/&/\n/g' | wc -l)" = "1" && "$(echo $JD_COOKIE | grep -o 'pt_key' | wc -l)" -gt 1 ]] && echo -e "\n#$cur_time 检测到您将多个 COOKIES 填写到单个环境变量值，请注意将各 COOKIES 采用 & 分隔，否则将无法完整输出互助码及互助规则！"
-    echo -e "\n#$cur_time 从日志提取互助码，编号和配置文件中Cookie编号完全对应，如果为空就是所有日志中都没有。\n\n#$cur_time 即使某个MyXxx变量未赋值，也可以将其变量名填在ForOtherXxx中，jtask脚本会自动过滤空值。\n"
+    [[ $DEBUG = "1" ]] && echo -e "\n#【`date +%X`】 当前 code.sh 的线程数量：$ps_num"
+    [[ $DEBUG = "1" ]] && echo -e "\n#【`date +%X`】 预设的 JD_COOKIE 数量：`echo $JD_COOKIE | grep -o 'pt_key' | wc -l`"
+    [[ $DEBUG = "1" ]] && echo -e "\n#【`date +%X`】 预设的 JD_COOKIE 环境变量数量：`echo $JD_COOKIE | sed 's/&/\n/g' | wc -l`"
+    [[ $DEBUG = "1" && "$(echo $JD_COOKIE | sed 's/&/\n/g' | wc -l)" = "1" && "$(echo $JD_COOKIE | grep -o 'pt_key' | wc -l)" -gt 1 ]] && echo -e "\n#【`date +%X`】 检测到您将多个 COOKIES 填写到单个环境变量值，请注意将各 COOKIES 采用 & 分隔，否则将无法完整输出互助码及互助规则！"
+    echo -e "\n#【`date +%X`】 从日志提取互助码，编号和配置文件中Cookie编号完全对应，如果为空就是所有日志中都没有。\n\n#【`date +%X`】 即使某个MyXxx变量未赋值，也可以将其变量名填在ForOtherXxx中，jtask脚本会自动过滤空值。\n"
     if [[ $DiyHelpType = "1" ]]; then
-        echo -e "#$cur_time 您已启用指定活动采用指定互助模板功能！"
+        echo -e "#【`date +%X`】 您已启用指定活动采用指定互助模板功能！"
     else
-        echo -n "#$cur_time 您选择的互助码模板为："
+        echo -n "#【`date +%X`】 您选择的互助码模板为："
         case $HelpType in
         0)
             echo "所有账号助力码全部一致。"
@@ -391,119 +387,97 @@ export_all_codes() {
             ;;
         esac
     fi
-    [[ $BreakHelpType = "1" ]] && echo -e "\n#$cur_time 您已启用屏蔽模式，账号 $BreakHelpNum 将不被助力！"
-    if [ "$ps_num" -gt 7 ]; then
-        echo -e "\n#$cur_time 检测到 code.sh 的线程过多 ，请稍后再试！"
+    [[ $BreakHelpType = "1" ]] && echo -e "\n#【`date +%X`】 您已启用屏蔽模式，账号 $BreakHelpNum 将不被助力！"
+    if [ "$ps_num" -gt $proc_num ]; then
+        echo -e "\n#【`date +%X`】 检测到 code.sh 的线程过多 ，请稍后再试！"
         exit
     elif [ -z $repo ]; then
-        echo -e "\n#$cur_time 未检测到兼容的活动脚本日志，无法读取互助码，退出！"
+        echo -e "\n#【`date +%X`】 未检测到兼容的活动脚本日志，无法读取互助码，退出！"
         exit
     else
-        echo -e "\n#$cur_time 默认调用 $repo 的脚本日志，格式化导出互助码，生成互助规则！"
+        echo -e "\n#【`date +%X`】 默认调用 $repo 的脚本日志，格式化导出互助码，生成互助规则！"
         dump_user_info
         for ((i = 0; i < ${#name_js[*]}; i++)); do
-        echo -e "\n## ${name_chinese[i]}："
-        export_codes_sub "${name_js[i]}" "${name_config[i]}" "${name_chinese[i]}"
-        done
-        for ((i = 0; i < ${#name_js_only[*]}; i++)); do
-            echo -e "\n## ${name_chinese_only[i]}："
-            export_codes_sub_only "${name_js_only[i]}" "${name_config_only[i]}" "${name_chinese_only[i]}"
+            echo -e "\n## ${name_chinese[i]}："
+            export_codes_sub "${name_js[i]}" "${name_config[i]}" "${name_chinese[i]}"
         done
     fi
 }
 
 #更新配置文件中互助码的函数
-help_codes_rules(){
+help_codes(){
 local envs=$(eval echo "\$JD_COOKIE")
 local array=($(echo $envs | sed 's/&/ /g'))
 local user_sum=${#array[*]}
 local config_name=$1
+local chinese_name=$2
 local config_name_my=My$config_name
 local config_name_for_other=ForOther$config_name
+local ShareCode_dir="$dir_log/.ShareCode"
+local ShareCode_log="$ShareCode_dir/$config_name.log"
 local i j k
 
 #更新配置文件中的互助码
-if [ -z "$(cat $file_task_before | grep "^$config_name_my\d")" ]; then
-   echo -e "\n${config_name_my}1=''\n" >> $file_task_before
+[[ ! -d $ShareCode_dir ]] && mkdir -p $ShareCode_dir
+[[ "$1" = "TokenJxnc" ]] && config_name_my=$1
+if [ ! -f $ShareCode_log ] || [ -z "$(cat $ShareCode_log | grep "^$config_name_my\d")" ]; then
+   echo -e "\n## $chinese_name\n${config_name_my}1=''\n" >> $ShareCode_log
 fi
-for ((i=1; i<=100; i++)); do
-    if [[ $i -le $user_sum ]] && [[ ! -z "$(cat $log_path | grep "^$config_name_my$i=.*'$")" ]]; then
-        new_code="$(cat $log_path | grep "^$config_name_my$i=.*'$" | sed "s/.*'\(.*\)'.*/\1/")"
-        old_code="$(cat $file_task_before | grep "^$config_name_my$i=.*'$" | sed "s/.*'\(.*\)'.*/\1/")"
-        if [ -z "$(grep "^$config_name_my$i" $file_task_before)" ]; then
-            sed -i "/^$config_name_my$[$i-1]='.*'/ s/$/\n$config_name_my$i=\'\'/" $file_task_before
+for ((i=1; i<=200; i++)); do
+    local new_code="$(cat $latest_log_path | grep "^$config_name_my$i=.\+'$" | sed "s/\S\+'\([^']*\)'$/\1/")"
+    local old_code="$(cat $ShareCode_log | grep "^$config_name_my$i=.\+'$" | sed "s/\S\+'\([^']*\)'$/\1/")"
+    if [[ $i -le $user_sum ]]; then
+        if [ -z "$(grep "^$config_name_my$i" $ShareCode_log)" ]; then
+            sed -i "/^$config_name_my$[$i-1]='.*'/ s/$/\n$config_name_my$i=\'\'/" $ShareCode_log
         fi
         if [ "$new_code" != "$old_code" ]; then
-#            if [ $1 = "BookShop" ]; then
-#                if [[ "$new_code" != "undefined" ]] && [[ "$new_code" != "{}" ]] && [[ "$new_code" != "" ]]; then
-#                    sed -i "s/^$config_name_my$i='$old_code'$/$config_name_my$i='$new_code'/" $file_task_before
-#                fi
-#            else
-                if [[ "$new_code" != "undefined" ]] && [[ "$new_code" != "{}" ]] || [[ "$new_code" = "" ]]; then
-                    sed -i "s/^$config_name_my$i='$old_code'$/$config_name_my$i='$new_code'/" $file_task_before
-                fi
-#            fi
-        fi
-    elif [[ $i -gt $user_sum ]] && [[ $i -gt 1 ]] && [[ ! -z "$(cat $file_task_before | grep "^$config_name_my$i")" ]]; then
-        sed -i "/^$config_name_my$i/d" $file_task_before
-    elif [[ $i -eq 1 ]] && [[ ! -z "$(cat $file_task_before | grep "^$config_name_my$i")" ]]; then
-        sed -i "s/^$config_name_my$i='\S*'$/$config_name_my$i=''/" $file_task_before
-    fi
-done
-
-#更新配置文件中的互助规则
-if [ -z "$(cat $file_task_before | grep "^$config_name_for_other\d")" ]; then
-   echo -e "${config_name_for_other}1=\"\"\n" >> $file_task_before
-fi
-for ((j=1; j<=100; j++)); do
-    if [[ $j -le $user_sum ]] && [[ ! -z "$(cat $log_path | grep "^$config_name_for_other$j=.*\"$")" ]]; then
-        new_rule="$(cat $log_path | grep "^$config_name_for_other$j=.*\"$" | sed "s/.*\"\(.*\)\".*/\1/")"
-        old_rule="$(cat $file_task_before | grep "^$config_name_for_other$j=.*\"$" | sed "s/.*\"\(.*\)\".*/\1/")"
-        if [ -z "$(grep "^$config_name_for_other$j" $file_task_before)" ]; then
-            sed -i "/^$config_name_for_other$[$j-1]=".*"/ s/$/\n$config_name_for_other$j=\"\"/" $file_task_before
-        fi
-        if [ "$new_rule" != "$old_rule" ]; then
-            sed -i "s/^$config_name_for_other$j=\"$old_rule\"$/$config_name_for_other$j=\"$new_rule\"/" $file_task_before
-        fi
-    elif [[ $j -gt $user_sum ]] && [[ $j -gt 1 ]] && [[ ! -z "$(cat $file_task_before | grep "^$config_name_for_other$j")" ]]; then
-        sed -i "/^$config_name_for_other$j/d" $file_task_before
-    elif [[ $j -eq 1 ]] && [[ ! -z "$(cat $file_task_before | grep "^$config_name_for_other$j")" ]]; then
-        sed -i "s/^$config_name_for_other$j=\"\S*\"$/$config_name_for_other$j=\"\"/" $file_task_before
-    fi
-done
-}
-
-help_codes_only(){
-local envs=$(eval echo "\$JD_COOKIE")
-local array=($(echo $envs | sed 's/&/ /g'))
-local user_sum=${#array[*]}
-local config_name=$1
-local config_name_my=My$config_name
-local config_name_for_other=ForOther$config_name
-local i j k
-
-#更新配置文件中的互助码
-if [ -z "$(cat $file_task_before | grep "^$config_name\d")" ]; then
-   echo -e "\n${config_name}1=''\n" >> $file_task_before
-fi
-for ((k=1; k<=100; k++)); do
-    if [[ $k -le $user_sum ]] && [[ ! -z "$(cat $log_path | grep "^$config_name$k=.*'$")" ]]; then
-        new_code="$(cat $log_path | grep "^$config_name$k=.*'$" | sed "s/.*'\(.*\)'.*/\1/")"
-        old_code="$(cat $file_task_before | grep "^$config_name$k=.*'$" | sed "s/.*'\(.*\)'.*/\1/")"
-        if [ -z "$(grep "^$config_name$k" $file_task_before)" ]; then
-            sed -i "/^$config_name$[$k-1]='.*'/ s/$/\n$config_name$k=\'\'/" $file_task_before
-        fi
-        if [ "$new_code" != "$old_code" ]; then
-            if [[ "$new_code" != "undefined" ]] && [[ "$new_code" != "{}" ]] || [[ "$new_code" = "" ]]; then
-                sed -i "s/^$config_name$k='$old_code'$/$config_name$k='$new_code'/" $file_task_before
+            if [[ "$new_code" != "undefined" ]] && [[ "$new_code" != "{}" ]]; then
+                sed -i "s/^$config_name_my$i='$old_code'$/$config_name_my$i='$new_code'/" $ShareCode_log
             fi
         fi
-    elif [[ $k -gt $user_sum ]] && [[ $k -gt 1 ]] && [[ ! -z "$(cat $file_task_before | grep "^$config_name$k")" ]]; then
-        sed -i "/^$config_name$k/d" $file_task_before
-    elif [[ $k -eq 1 ]] && [[ ! -z "$(cat $file_task_before | grep "^$config_name$k")" ]]; then
-        sed -i "s/^$config_name$k='\S*'$/$config_name$k=''/" $file_task_before
+    elif [[ $i -gt $user_sum ]] && [[ $i -gt 1 ]]; then
+        sed -i "/^$config_name_my$i/d" $ShareCode_log
+    elif [[ $i -eq 1 ]] && [[ -z "$new_code" ]]; then
+        sed -i "s/^$config_name_my$i='\S*'$/$config_name_my$i=''/" $ShareCode_log
     fi
 done
+sed -i "1c ## 上次导入时间：$(date +%Y年%m月%d日\ %X)" $ShareCode_log
+}
+
+#更新配置文件中互助规则的函数
+help_rules(){
+local envs=$(eval echo "\$JD_COOKIE")
+local array=($(echo $envs | sed 's/&/ /g'))
+local user_sum=${#array[*]}
+local config_name=$1
+local chinese_name=$2
+local config_name_my=My$config_name
+local config_name_for_other=ForOther$config_name
+local ShareCode_dir="$dir_log/.ShareCode"
+local ShareCode_log="$ShareCode_dir/$config_name.log"
+local i j k
+
+#更新配置文件中的互助规则
+if [ -z "$(cat $ShareCode_log | grep "^$config_name_for_other\d")" ]; then
+   echo -e "${config_name_for_other}1=\"\"" >> $ShareCode_log
+fi
+for ((j=1; j<=200; j++)); do
+    local new_rule="$(cat $latest_log_path | grep "^$config_name_for_other$j=.\+\"$" | sed "s/\S\+\"\([^\"]*\)\"$/\1/")"
+    local old_rule="$(cat $ShareCode_log | grep "^$config_name_for_other$j=.\+\"$" | sed "s/\S\+\"\([^\"]*\)\"$/\1/")"
+    if [[ $j -le $user_sum ]]; then
+        if [ -z "$(grep "^$config_name_for_other$j" $ShareCode_log)" ]; then
+            sed -i "/^$config_name_for_other$[$j-1]=".*"/ s/$/\n$config_name_for_other$j=\"\"/" $ShareCode_log
+        fi
+        if [ "$new_rule" != "$old_rule" ]; then
+            sed -i "s/^$config_name_for_other$j=\"$old_rule\"$/$config_name_for_other$j=\"$new_rule\"/" $ShareCode_log
+        fi
+    elif [[ $j -gt $user_sum ]] && [[ $j -gt 1 ]]; then
+        sed -i "/^$config_name_for_other$j/d" $ShareCode_log
+    elif [[ $j -eq 1 ]] && [[ -z "$new_rule" ]]; then
+        sed -i "s/^$config_name_for_other$j=\"\S*\"$/$config_name_for_other$j=\"\"/" $ShareCode_log
+    fi
+done
+sed -i "1c ## 上次导入时间：$(date +%Y年%m月%d日\ %X)" $ShareCode_log
 }
 
 export_codes_sub_only(){
@@ -544,38 +518,65 @@ export_codes_sub_only(){
                 echo "$config_name$j='$tmp_my_code'"
             done
         else
-            echo "#$cur_time 从日志中未找到任何互助码"
+            echo "## 从日志中未找到任何互助码"
         fi
 fi
 }
 
 #更新互助码和互助规则
 update_help(){
-#latest_log=$(ls -r $dir_code | head -1)
-latest_log=$log_path
 case $UpdateType in
     1)
-        if [ "$ps_num" -le 7 ] && [ -f $log_path ] && [ -f $file_task_before ]; then
+        if [ "$ps_num" -le $proc_num ] && [ -f $latest_log_path ]; then
             backup_del
-            echo -e "\n#$cur_time 开始更新配置文件的互助码和互助规则" | tee -a $latest_log
-            for i in ${name_config[@]}; do
-                help_codes_rules $i
+            echo -e "\n#【`date +%X`】 开始更新配置文件的互助码和互助规则"
+            for ((i = 0; i < ${#name_config[*]}; i++)); do
+                help_codes "${name_config[i]}" "${name_chinese[i]}"
+                [[ "${name_config[i]}" != "TokenJxnc" ]] && help_rules "${name_config[i]}" "${name_chinese[i]}"
             done
-            for i in ${name_config_only[@]}; do
-                help_codes_only $i
+            echo -e "\n#【`date +%X`】 配置文件的互助码和互助规则已完成更新"
+        elif [ ! -f $latest_log_path ]; then
+            echo -e "\n#【`date +%X`】 日志文件不存在，请检查后重试！"
+        fi
+        ;;
+    2)
+        if [ "$ps_num" -le $proc_num ] && [ -f $latest_log_path ]; then
+            backup_del
+            echo -e "\n#【`date +%X`】 开始更新配置文件的互助码，不更新互助规则"
+            for ((i = 0; i < ${#name_config[*]}; i++)); do
+                help_codes "${name_config[i]}" "${name_chinese[i]}"
             done
-            sed -i "4c ## 上次导入时间：$(date +%Y年%m月%d日\ %X)" /ql/config/task_before.sh
-            echo -e "\n#$cur_time 配置文件的互助码和互助规则已完成更新" | tee -a $latest_log
-        elif [ ! -f $log_path ]; then
-            echo -e "\n#$cur_time 日志文件不存在，请检查后重试！" | tee -a $latest_log
-        elif [ ! -f $file_task_before ]; then
-            echo -e "\n#$cur_time 配置文件不存在，请检查后重试！" | tee -a $latest_log
+            echo -e "\n#【`date +%X`】 配置文件的互助码已完成更新"
+        elif [ ! -f $latest_log_path ]; then
+            echo -e "\n#【`date +%X`】 日志文件不存在，请检查后重试！"
+        fi
+        ;;
+    3)
+        if [ "$ps_num" -le $proc_num ] && [ -f $latest_log_path ]; then
+            backup_del
+            echo -e "\n#【`date +%X`】 开始更新配置文件的互助规则，不更新互助码"
+            for ((i = 0; i < ${#name_config[*]}; i++)); do
+                [[ "${name_config[i]}" != "TokenJxnc" ]] && help_rules "${name_config[i]}" "${name_chinese[i]}"
+            done
+            echo -e "\n#【`date +%X`】 配置文件的互助规则已完成更新"
+        elif [ ! -f $latest_log_path ]; then
+            echo -e "\n#【`date +%X`】 日志文件不存在，请检查后重试！"
         fi
         ;;
     *)
-        echo -e "\n#$cur_time 您已设置不更新配置文件的互助码和互助规则，跳过更新！" | tee -a $latest_log
+        echo -e "\n#【`date +%X`】 您已设置不更新配置文件的互助码和互助规则，跳过更新！"
         ;;
 esac
+}
+
+check_jd_cookie(){
+    local test_connect="$(curl -I -s --connect-timeout 5 https://bean.m.jd.com/bean/signIndex.action -w %{http_code} | tail -n1)"
+    local test_jd_cookie="$(curl -s --noproxy "*" "https://bean.m.jd.com/bean/signIndex.action" -H "cookie: $1")"
+    if [ "$test_connect" -eq "302" ]; then
+        [[ "$test_jd_cookie" ]] && echo "(COOKIE 有效)" || echo "(COOKIE 已失效)"
+    else
+        echo "(API 连接失败)"
+    fi
 }
 
 dump_user_info(){
@@ -584,13 +585,32 @@ local envs=$(eval echo "\$JD_COOKIE")
 local array=($(echo $envs | sed 's/&/ /g'))
     for ((m = 0; m < ${#pt_pin[*]}; m++)); do
         j=$((m + 1))
-        echo -e "## 用户名 $j：${pt_pin[m]}\n## Cookie$j=\"${array[m]}\""
+        echo -e "## 用户名 $j：${pt_pin[m]} 备注：${remark_name[m]} `check_jd_cookie ${array[m]}`\nCookie$j=\"${array[m]}\""
     done
 }
 
 backup_del(){
-[[ $BACKUP = "1" ]] && mkdir -p $dir_config/bak/ && cp $file_task_before $dir_config/bak/task_before_$log_time.sh
-[[ $CLEANBAK = "1" ]] && find $dir_config/bak/ -type f -mtime +$CLEANBAK_DAYS | xargs rm -rvf
+[[ ! -d $dir_log/.bak_ShareCode ]] && mkdir -p $dir_log/.bak_ShareCode
+local bak_ShareCode_full_path_list=$(find $dir_log/.bak_ShareCode/ -name "*.log")
+local diff_time
+if [[ $BACKUP = "1" ]]; then
+    for ((i = 0; i < ${#name_config[*]}; i++)); do
+        [[ -f $dir_log/.ShareCode/${name_config[i]}.log ]] && cp $dir_log/.ShareCode/${name_config[i]}.log $dir_log/.bak_ShareCode/${name_config[i]}_`date "+%Y-%m-%d-%H-%M-%S"`.log
+    done
+fi
+if [[ $CLEANBAK = "1" ]]; then
+    for log in $bak_ShareCode_full_path_list; do
+        local log_date=$(echo $log | awk -F "_" '{print $NF}' | cut -c1-10)
+        if [[ $(date +%s -d $log_date 2>/dev/null) ]]; then
+            if [[ $is_macos -eq 1 ]]; then
+                diff_time=$(($(date +%s) - $(date -j -f "%Y-%m-%d" "$log_date" +%s)))
+            else
+                diff_time=$(($(date +%s) - $(date +%s -d "$log_date")))
+            fi
+            [[ $diff_time -gt $(($CLEANBAK_DAYS * 86400)) ]] && rm -vf $log
+        fi
+    done
+fi
 }
 
 install_dependencies_normal(){
@@ -598,27 +618,21 @@ install_dependencies_normal(){
         case $i in
             canvas)
                 cd /ql/scripts
+                if [[ "$(echo $(npm ls $i) | grep ERR)" != "" ]]; then
+                    npm uninstall $i
+                fi
                 if [[ "$(npm ls $i)" =~ (empty) ]]; then
-                    if [[ "echo $(npm ls $i) | grep ERR" != "" ]]; then
-                        npm uninstall $i
-                    fi
                     apk add --no-cache build-base g++ cairo-dev pango-dev giflib-dev && npm i $i --prefix /ql/scripts --build-from-source
                 fi
                 ;;
-            typescript)
-                if [[ "$(npm ls $i -g)" =~ (empty) ]]; then
-                    if [[ "echo $(npm ls $i -g) | grep ERR" != "" ]]; then
-                        npm uninstall $i
-                    fi
-                    npm i $i -g --force
-                fi
-                ;;
             *)
+                if [[ "$(npm ls $i)" =~ $i ]]; then
+                    npm uninstall $i
+                elif [[ "$(echo $(npm ls $i -g) | grep ERR)" != "" ]]; then
+                    npm uninstall $i -g
+                fi
                 if [[ "$(npm ls $i -g)" =~ (empty) ]]; then
-                    if [[ "echo $(npm ls $i -g) | grep ERR" != "" ]]; then
-                        npm uninstall $i
-                    fi
-                    npm i $i -g
+                    [[ $i = "typescript" ]] && npm i $i -g --force || npm i $i -g
                 fi
                 ;;
         esac
@@ -630,22 +644,27 @@ install_dependencies_force(){
         case $i in
             canvas)
                 cd /ql/scripts
-                if [[ "$(npm ls $i)" =~ (empty) ]]; then
-                    if [[ "$(npm ls $i)" =~ $i ]] || [[ "echo $(npm ls $i) | grep ERR" != "" ]]; then
-                        npm uninstall $i
-                    fi
+                if [[ "$(npm ls $i)" =~ $i && "$(echo $(npm ls $i) | grep ERR)" != "" ]]; then
+                    npm uninstall $i
                     rm -rf /ql/scripts/node_modules/$i
                     rm -rf /usr/local/lib/node_modules/lodash/*
+                fi
+                if [[ "$(npm ls $i)" =~ (empty) ]]; then
                     apk add --no-cache build-base g++ cairo-dev pango-dev giflib-dev && npm i $i --prefix /ql/scripts --build-from-source --force
                 fi
                 ;;
             *)
-                if [[ "$(npm ls $i -g)" =~ (empty) ]]; then
-                    if [[ "$(npm ls $i)" =~ $i ]] || [[ "$(npm ls $i -g)" =~ $i ]] || [[ "echo $(npm ls $i -g) | grep ERR" != "" ]]; then
-                        npm uninstall $i
-                    fi
-                    rm -rf /usr/local/lib/node_modules/$i
+                cd /ql/scripts
+                if [[ "$(npm ls $i)" =~ $i ]]; then
+                    npm uninstall $i
+                    rm -rf /ql/scripts/node_modules/$i
                     rm -rf /usr/local/lib/node_modules/lodash/*
+                elif [[ "$(npm ls $i -g)" =~ $i && "$(echo $(npm ls $i -g) | grep ERR)" != "" ]]; then
+                    npm uninstall $i -g
+                    rm -rf /ql/scripts/node_modules/$i
+                    rm -rf /usr/local/lib/node_modules/lodash/*
+                fi
+                if [[ "$(npm ls $i -g)" =~ (empty) ]]; then
                     npm i $i -g --force
                 fi
                 ;;
@@ -655,23 +674,22 @@ install_dependencies_force(){
 
 install_dependencies_all(){
     install_dependencies_normal $package_name
-    cd /ql/scripts
     for i in $package_name; do
-        install_dependencies_force $i
+        {install_dependencies_force $i} &
     done
 }
 
+kill_proc(){
+ps -ef|grep "$1"|grep -Ev "$2"|awk '{print $1}'|xargs kill -9
+}
 
 ## 执行并写入日志
-[[ $FixDependType = "1" ]] && install_dependencies_all >/dev/null 2>&1 &
-today="$(date +%Y年%m月%d日)"
-cur_time="【$(date +%X)】"
-log_time=$(date "+%Y-%m-%d-%H-%M-%S")
-log_path="$dir_code/$log_time.log"
-make_dir "$dir_code"
+kill_proc "code.sh" "grep|$$" >/dev/null 2>&1
+[[ $FixDependType = "1" ]] && [[ "$ps_num" -le $proc_num ]] && install_dependencies_all >/dev/null 2>&1 &
+latest_log=$(ls -r $dir_code | head -1)
+latest_log_path="$dir_code/$latest_log"
 ps_num="$(ps | grep code.sh | grep -v grep | wc -l)"
-#[[ ! -z "$(ps -ef|grep -w 'code.sh'|grep -v grep)" ]] && ps -ef|grep -w 'code.sh'|grep -v grep|awk '{print $1}'|xargs kill -9
-export_all_codes | perl -pe "{s|京东种豆|种豆|; s|crazyJoy任务|疯狂的JOY|}" | tee $log_path
+export_all_codes | perl -pe "{s|京东种豆|种豆|; s|crazyJoy任务|疯狂的JOY|}"
 sleep 5
 update_help
 
