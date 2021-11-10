@@ -1,3 +1,7 @@
+# 5700: 青龙
+# 5701: ninja
+# 5702: go-cqhttp http server
+# 5703: quickchart
 version: '2'
 services:
   web:
@@ -19,3 +23,10 @@ services:
       - ENABLE_HANGUP=true
       - ENABLE_WEB_PANEL=true
 
+  quickchart:
+    image: ianw/quickchart
+    container_name: quickchart
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "0.0.0.0:5703:3400"
