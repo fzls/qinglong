@@ -96,8 +96,8 @@ def notify_all_account_bean_and_chart():
         message_and_image_list.append((get_account_name(account_idx), ""))
 
         # 获取豆子数据
+        logger.info(f"开始获取 {get_account_name(account_idx)} 的京豆数据")
         bean_res = get_bean_data(account_idx)
-        logger.info(f"{get_account_name(account_idx)} 京豆数据已获取完毕")
 
         # 制作豆子统计图表
         message_and_image_list.append(get_bean(account_idx, bean_res))
