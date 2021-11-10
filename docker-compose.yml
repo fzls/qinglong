@@ -13,6 +13,7 @@ services:
       - ./data/config:/ql/config
       - ./data/log:/ql/log
       - ./data/db:/ql/db
+      - ./data/jbot:/ql/jbot
       - ./data/scripts:/ql/scripts
       - ./data/repo:/ql/repo
       - ./data/ninja:/ql/ninja
