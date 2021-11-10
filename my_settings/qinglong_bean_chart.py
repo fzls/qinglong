@@ -39,12 +39,14 @@ logger.addHandler(consoleHandler)
 
 # 基础配置
 QL_DIR = "/ql"
+# 目前需假设机器人和青龙在同一台物理机上，从而可以取得对应图片文件
+ROBOT_QL_DIR = "D:/_codes/js/qinglong/data"
 QL_API_ADDR = "http://qinglong:5700/api"
 NINJA_API_ADDR = "http://localhost:5701/api"
 # QUICK_CHART_ADDR = "https://quickchart.io"
 QUICK_CHART_ADDR = "http://quickchart:3400"
 if run_in_pycharm():
-    QL_DIR = "D:/_codes/js/qinglong/data"
+    QL_DIR = ROBOT_QL_DIR
     QL_API_ADDR = "http://localhost:5700/api"
     NINJA_API_ADDR = "http://localhost:5701/api"
     QUICK_CHART_ADDR = "http://localhost:5703"
@@ -76,6 +78,7 @@ def notify_all_account_bean_and_chart():
     message_and_image_list = []
 
     # 生成图和表
+    logger.info("开始生成全部账号的统计图表")
     cookies = get_cks(AUTH_JSON)
     for account_idx in range_from_one(len(cookies)):
         message_and_image_list.append(get_bean(account_idx))
@@ -98,6 +101,9 @@ def send_notify(message_and_image_list: List[Tuple[str, str]]):
             }
         })
         if image != "":
+            # 替换为机器人可以访问到的路径
+            if not image.startswith(ROBOT_QL_DIR):
+                image = image.replace(QL_DIR, ROBOT_QL_DIR, 1)
             cq_messages.append({
                 "type": "image",
                 "data": {
@@ -105,6 +111,7 @@ def send_notify(message_and_image_list: List[Tuple[str, str]]):
                 }
             })
 
+    logger.info(f"开始发送消息: {cq_messages}")
     res = requests.post(f"{GOBOT_URL}?access_token={GOBOT_TOKEN}", json={
         "group_id": GOBOT_GROUP_ID,
         "message": cq_messages,
