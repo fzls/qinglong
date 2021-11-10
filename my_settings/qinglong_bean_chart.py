@@ -43,7 +43,6 @@ QL_DIR = "/ql"
 ROBOT_QL_DIR = "D:/_codes/js/qinglong/data"
 QL_API_ADDR = "http://qinglong:5700/api"
 NINJA_API_ADDR = "http://localhost:5701/api"
-# QUICK_CHART_ADDR = "https://quickchart.io"
 QUICK_CHART_ADDR = "http://quickchart:3400"
 if run_in_pycharm():
     QL_DIR = ROBOT_QL_DIR
@@ -51,6 +50,12 @@ if run_in_pycharm():
     NINJA_API_ADDR = "http://localhost:5701/api"
     QUICK_CHART_ADDR = "http://localhost:5703"
     logger.warning(f"在pycharm中调试时使用本地配置 {QL_DIR} {QL_API_ADDR} {QUICK_CHART_ADDR}")
+
+try:
+    requests.get(QUICK_CHART_ADDR, timeout=1)
+except:
+    QUICK_CHART_ADDR = "https://quickchart.io"
+    logger.info(f"未发现本地架设的quickchart服务，将使用官方服务 {QUICK_CHART_ADDR}")
 
 FONT_FILE = f'{QL_DIR}/jbot/font/jet.ttf'
 AUTH_JSON = f"{QL_DIR}/config/auth.json"
