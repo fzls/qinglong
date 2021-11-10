@@ -35,11 +35,11 @@ logger.addHandler(consoleHandler)
 
 # -------- 使用说明 -------------
 # 配置go-cqhttp的三个环境变量即可
-# 如果未本地搭设quickchart，请切换为官方的那个链接
+# 同时须确保机器人和青龙在同一台物理机/容器上, 从而可以使用本地文件来发图片
+# 将下面的 ROBOT_QL_DIR 修改为你的ql容器映射的数据目录（也就是里面有config、scripts等目录的那个目录）
 
 # 基础配置
 QL_DIR = "/ql"
-# 目前需假设机器人和青龙在同一台物理机上，从而可以取得对应图片文件
 ROBOT_QL_DIR = "D:/_codes/js/qinglong/data"
 QL_API_ADDR = "http://qinglong:5700/api"
 NINJA_API_ADDR = "http://localhost:5701/api"
