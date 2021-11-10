@@ -81,10 +81,16 @@ def notify_all_account_bean_and_chart():
     logger.info("开始生成全部账号的统计图表")
     cookies = get_cks(AUTH_JSON)
     for account_idx in range_from_one(len(cookies)):
+        if account_idx != 1:
+            message_and_image_list.append(("\n\n", ""))
+
         message_and_image_list.append(get_bean(account_idx))
         message_and_image_list.append(get_chart(account_idx))
-        # message_and_image_list.append((f"账号 {get_account_name(account_idx)} 统计表如下", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
-        # message_and_image_list.append((f"账号 {get_account_name(account_idx)} 统计图如下", f"{QL_DIR}/log/.bean_chart/chart_{account_idx}.jpeg"))
+
+        # message_and_image_list.append(
+        #     (f"账号 {get_account_name(account_idx)} 统计表如下", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
+        # message_and_image_list.append(
+        #     (f"账号 {get_account_name(account_idx)} 统计图如下", f"{QL_DIR}/log/.bean_chart/chart_{account_idx}.jpeg"))
 
     # 发送消息
     send_notify(message_and_image_list)
