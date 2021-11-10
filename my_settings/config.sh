@@ -504,7 +504,7 @@ export JD_HEALTH_REWARD_NAME="20" ##只能兑换京豆，填写纯数字20 10 5 
 # Ninja 环境变量
 ## 1、通知黑名单
 ### 使用 & 分隔，例如 东东乐园&东东萌宠
-export NOTIFY_SKIP_LIST=""
+export NOTIFY_SKIP_LIST="京东种豆得豆&东东萌宠&京东到家果园信息&京喜工厂商品列表详情&京东到家果园互助码:&第二期红包🧧&京东试用"
 
 # 不知名大佬环境变量
 ## 1、清空购物车
@@ -517,7 +517,7 @@ export CleanUsers=""
 ### 自动检测账号是否正常，不正常的自动禁用，正常的如果是禁用状态则自动启用
 export CHECKCK_SHOWSUCCESSCK="false" ##显示正常CK，true为显示
 export CHECKCK_CKALWAYSNOTIFY="true" ##通知CK状态，true为永远通知
-export CHECKCK_CKAUTOENABLE="false" ##自动启用CK，false为停用
+export CHECKCK_CKAUTOENABLE="true" ##自动启用CK，false为停用
 export CHECKCK_CKNOWARNERROR="true" ##服务器空数据等错误不触发通知，false为通知
 ## [2] jd_bean_change.js
 ### 自用的京东资产变动查询加强版
@@ -597,6 +597,7 @@ export JD_BEAN_CHANGE_SENDNUM="10"
 ### 使用前请认真看对应注释：https://raw.githubusercontent.com/X1a0He/jd_scripts_fixed/main/jd_cart_remove.js
 ### 当环境变量中存在JD_CART并设置为true时才会执行删除购物车
 export JD_CART="true"
+export JD_CART_REMOVE="true"
 ### 运行一次取消多全部已关注的商品。数字0表示不取关任何商品，默认20
 export JD_CART_REMOVESIZE="20"
 ### 是否清空，如果为false，则上面设置了多少就只删除多少条
