@@ -92,10 +92,15 @@ def notify_all_account_bean_and_chart():
         if account_idx != 1:
             message_and_image_list.append(("\n", ""))
 
+        # 账号信息
         message_and_image_list.append((get_account_name(account_idx), ""))
 
-        message_and_image_list.append(get_bean(account_idx))
-        message_and_image_list.append(get_chart(account_idx))
+        # 获取豆子数据
+        bean_res = get_bean_data(account_idx)
+
+        # 制作豆子统计图表
+        message_and_image_list.append(get_bean(account_idx, bean_res))
+        message_and_image_list.append(get_chart(account_idx, bean_res))
 
         # message_and_image_list.append(("", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
         # message_and_image_list.append(("", f"{QL_DIR}/log/.bean_chart/chart_{account_idx}.jpeg"))
@@ -150,8 +155,9 @@ def make_sure_dir_exists(dir_path):
 
 
 # 生成统计表
-def get_bean(account_idx: int) -> Tuple[str, str]:
-    res = get_bean_data(account_idx)
+def get_bean(account_idx: int, res=None) -> Tuple[str, str]:
+    if res is None:
+        res = get_bean_data(account_idx)
     if res['code'] == 200:
         return creat_bean_count(account_idx, res['data'][3], res['data'][0], res['data'][1], res['data'][2][1:])
     else:
@@ -159,8 +165,9 @@ def get_bean(account_idx: int) -> Tuple[str, str]:
 
 
 # 生成统计图
-def get_chart(account_idx: int):
-    res = get_bean_data(int(account_idx))
+def get_chart(account_idx: int, res=None) -> Tuple[str, str]:
+    if res is None:
+        res = get_bean_data(account_idx)
     if res['code'] == 200:
         return creat_chart(account_idx, res['data'][3], f'{get_account_name(account_idx)}',
                            res['data'][0], res['data'][1], res['data'][2][1:])
