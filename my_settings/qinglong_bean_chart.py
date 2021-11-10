@@ -33,12 +33,14 @@ logger.addHandler(consoleHandler)
 # 基础配置
 QL_DIR = "/ql"
 QL_API_ADDR = "http://qinglong:5700/api"
+NINJA_API_ADDR = "http://qinglong:5701/api"
 # QUICK_CHART_ADDR = "https://quickchart.io"
 QUICK_CHART_ADDR = "http://quickchart:3400"
 if os.getenv('PYCHARM_HOSTED') == '1':
     QL_DIR = "D:/_codes/js/qinglong/data"
-    QL_API_ADDR = "http://127.0.0.1:5700/api"
-    QUICK_CHART_ADDR = "http://127.0.0.1:5703"
+    QL_API_ADDR = "http://localhost:5700/api"
+    NINJA_API_ADDR = "http://localhost:5701/api"
+    QUICK_CHART_ADDR = "http://localhost:5703"
     logger.warning(f"在pycharm中调试时使用本地配置 {QL_DIR} {QL_API_ADDR} {QUICK_CHART_ADDR}")
 
 FONT_FILE = f'{QL_DIR}/jbot/font/jet.ttf'
@@ -71,8 +73,8 @@ def notify_all_account_bean_and_chart():
     for account_idx in range_from_one(len(cookies)):
         message_and_image_list.append(get_bean(account_idx))
         message_and_image_list.append(get_chart(account_idx))
-        # message_and_image_list.append((f"第 {account_idx} 个账号统计表如下", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
-        # message_and_image_list.append((f"第 {account_idx} 个账号统计图如下", f"{QL_DIR}/log/.bean_chart/chart_{account_idx}.jpeg"))
+        # message_and_image_list.append((f"账号 {get_account_name(account_idx)} 统计表如下", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
+        # message_and_image_list.append((f"账号 {get_account_name(account_idx)} 统计图如下", f"{QL_DIR}/log/.bean_chart/chart_{account_idx}.jpeg"))
 
     # 发送消息
     send_notify(message_and_image_list)
@@ -170,6 +172,31 @@ def get_cks(ckfile):
             cookies.remove(ck)
             break
     return cookies
+
+
+def get_account_name(account_idx: int) -> str:
+    cookies = get_cks(AUTH_JSON)
+    if len(cookies) != 0:
+        ck = cookies[account_idx - 1]
+        pt_pin = ""
+        for kv in ck.split(';'):
+            if 'pt_pin' in kv:
+                pt_pin = kv.split('=')[1]
+                break
+
+        if pt_pin != "":
+            try:
+                print(f"{NINJA_API_ADDR}/users")
+                res = requests.get(f"{NINJA_API_ADDR}/users").json()
+                for user in res['data']:
+                    if user['pt_pin'] == pt_pin:
+                        name = user['nickName']
+                        return f"{name}({account_idx})"
+            except Exception as e:
+                logger.warning(f"get_account_name({account_idx}) exc={e}")
+                pass
+
+    return f"{account_idx}"
 
 
 def env_manage_QL(fun, envdata, token):
@@ -328,9 +355,9 @@ def creat_bean_count(account_idx, date, beansin, beansout, beanstotal) -> Tuple[
     make_sure_dir_exists(SAVE_DIR)
     save_path = f"{SAVE_DIR}/bean_{account_idx}.jpeg"
     im.save(save_path)
-    logger.info(f'您的账号 {account_idx} 收支情况 统计表格 已保存到 {save_path}')
+    logger.info(f'您的账号 {get_account_name(account_idx)} 收支情况 统计表格 已保存到 {save_path}')
 
-    return f"第 {account_idx} 个账号统计表如下", os.path.realpath(save_path)
+    return f"账号 {get_account_name(account_idx)} 统计表如下", os.path.realpath(save_path)
 
 
 def creat_chart(account_idx, xdata, title, bardata, bardata2, linedate):
@@ -441,9 +468,9 @@ def creat_chart(account_idx, xdata, title, bardata, bardata2, linedate):
     make_sure_dir_exists(SAVE_DIR)
     save_path = f"{SAVE_DIR}/chart_{account_idx}.jpeg"
     qc.to_file(save_path)
-    logger.info(f'您的账号 {account_idx} 收支情况 统计图 已保存到 {save_path}')
+    logger.info(f'您的账号 {get_account_name(account_idx)} 收支情况 统计图 已保存到 {save_path}')
 
-    return f"第 {account_idx} 个账号统计图如下", os.path.realpath(save_path)
+    return f"账号 {get_account_name(account_idx)} 统计图如下", os.path.realpath(save_path)
 
 
 class QuickChart:
@@ -558,4 +585,5 @@ def demo():
 
 if __name__ == '__main__':
     # demo()
+
     notify_all_account_bean_and_chart()
