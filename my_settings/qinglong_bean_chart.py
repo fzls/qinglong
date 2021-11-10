@@ -18,12 +18,19 @@ import requests.adapters
 from PIL import Image, ImageFont, ImageDraw
 from prettytable import PrettyTable
 
+
+def run_in_pycharm() -> bool:
+    return os.getenv('PYCHARM_HOSTED') == '1'
+
+
 # 设置logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.name = "bean_chart"
 consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logging.Formatter("%(asctime)s %(funcName)s:%(lineno)-3d %(levelname)-5.5s: %(message)s"))
+if run_in_pycharm():
+    fmt = logging.Formatter("%(asctime)s %(funcName)s:%(lineno)-3d %(levelname)-5.5s: %(message)s")
+    consoleHandler.setFormatter(fmt)
 logger.addHandler(consoleHandler)
 
 # -------- 使用说明 -------------
@@ -36,7 +43,7 @@ QL_API_ADDR = "http://qinglong:5700/api"
 NINJA_API_ADDR = "http://qinglong:5701/api"
 # QUICK_CHART_ADDR = "https://quickchart.io"
 QUICK_CHART_ADDR = "http://quickchart:3400"
-if os.getenv('PYCHARM_HOSTED') == '1':
+if run_in_pycharm():
     QL_DIR = "D:/_codes/js/qinglong/data"
     QL_API_ADDR = "http://localhost:5700/api"
     NINJA_API_ADDR = "http://localhost:5701/api"
