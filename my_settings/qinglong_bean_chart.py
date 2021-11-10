@@ -194,7 +194,29 @@ def get_cks(ckfile):
     return cookies
 
 
+user_pt_pin_to_nickname = {}
+
+
+def update_user_nicknames():
+    for idx in range_from_one(5):
+        res = None
+        try:
+            api = f"{NINJA_API_ADDR}/users"
+            res = session.get(api).json()
+            for user in res['data']:
+                user_pt_pin_to_nickname[user['pt_pin']] = user['nickName']
+
+            logger.info("更新用户昵称映射完成")
+            return
+        except Exception as e:
+            logger.warning(f"第 {idx} 次 update_user_nicknames失败了, res={res}, e={e}")
+            continue
+
+
 def get_account_name(account_idx: int) -> str:
+    if len(user_pt_pin_to_nickname) == 0:
+        update_user_nicknames()
+
     cookies = get_cks(AUTH_JSON)
     if len(cookies) != 0:
         ck = cookies[account_idx - 1]
@@ -204,18 +226,9 @@ def get_account_name(account_idx: int) -> str:
                 pt_pin = kv.split('=')[1]
                 break
 
-        if pt_pin != "":
-            res = None
-            try:
-                api = f"{NINJA_API_ADDR}/users"
-                res = requests.get(api).json()
-                for user in res['data']:
-                    if user['pt_pin'] == pt_pin:
-                        name = user['nickName']
-                        return f"{name}({account_idx})"
-            except Exception as e:
-                logger.warning(f"get_account_name({account_idx}) res={res} exc={e}")
-                pass
+        if pt_pin != "" and pt_pin in user_pt_pin_to_nickname:
+            nickname = user_pt_pin_to_nickname[pt_pin]
+            return f"{account_idx} - {nickname}"
 
     return f"{account_idx}"
 
