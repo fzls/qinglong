@@ -57,6 +57,7 @@ SHA_TZ = timezone(
     name='Asia/Shanghai',
 )
 TIMEOUT = 10
+requests.adapters.DEFAULT_RETRIES = 5
 session = requests.session()
 session.keep_alive = False
 
