@@ -1,0 +1,27 @@
+{
+    ///最大支持几个网页
+    "MaxTab": "4",
+    //网站标题
+    "Title": "Nvjdc",
+    //网站公告
+    "Announcement": "做人，最重要的就是开心啦。",
+    ///多青龙配置
+    "Config": [
+        {
+            //序号必须从1开始
+            "QLkey": 1,
+            //服务器名称
+            "QLName": "本机docker",
+            //青龙url
+            "QLurl": "http://qinglong:5700",
+            //青龙2,9 OpenApi Client ID
+            "QL_CLIENTID": "CJ2g_68kz4ww",
+            //青龙2,9 OpenApi Client Secret
+            "QL_SECRET": "Y7qUGmkew40g-rHb7u3xluj_",
+            //青龙面包最大ck容量
+            "QL_CAPACITY": 200,
+            //消息推送二维码
+            "QRurl": ""
+        }
+    ]
+}

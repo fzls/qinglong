@@ -2,6 +2,7 @@
 # 5701: ninja
 # 5702: go-cqhttp http server
 # 5703: quickchart
+# 5704: nvjdc
 version: '2'
 services:
   web:
@@ -25,9 +26,21 @@ services:
       - ENABLE_WEB_PANEL=true
 
   quickchart:
-    image: ianw/quickchart
+    image: ianw/quickchart:latest
     container_name: quickchart
     restart: unless-stopped
     tty: true
     ports:
       - "0.0.0.0:5703:3400"
+
+  nvjdc:
+    image: nolanhzy/nvjdc:latest
+    container_name: nvjdc
+    restart: unless-stopped
+    tty: true
+    privileged: true
+    ports:
+      - "0.0.0.0:5704:80"
+    volumes:
+      - ./data/nvjdc/Config.json:/app/Config/Config.json:ro
+      - ./data/nvjdc/.local-chromium:/app/.local-chromium
