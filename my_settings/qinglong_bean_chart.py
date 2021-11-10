@@ -40,7 +40,7 @@ logger.addHandler(consoleHandler)
 # 基础配置
 QL_DIR = "/ql"
 QL_API_ADDR = "http://qinglong:5700/api"
-NINJA_API_ADDR = "http://qinglong:5701/api"
+NINJA_API_ADDR = "http://localhost:5701/api"
 # QUICK_CHART_ADDR = "https://quickchart.io"
 QUICK_CHART_ADDR = "http://quickchart:3400"
 if run_in_pycharm():
@@ -192,15 +192,16 @@ def get_account_name(account_idx: int) -> str:
                 break
 
         if pt_pin != "":
+            res = None
             try:
-                print(f"{NINJA_API_ADDR}/users")
-                res = requests.get(f"{NINJA_API_ADDR}/users").json()
+                api = f"{NINJA_API_ADDR}/users"
+                res = requests.get(api).json()
                 for user in res['data']:
                     if user['pt_pin'] == pt_pin:
                         name = user['nickName']
                         return f"{name}({account_idx})"
             except Exception as e:
-                logger.warning(f"get_account_name({account_idx}) exc={e}")
+                logger.warning(f"get_account_name({account_idx}) res={res} exc={e}")
                 pass
 
     return f"{account_idx}"
@@ -592,5 +593,6 @@ def demo():
 
 if __name__ == '__main__':
     # demo()
+    # get_account_name(1)
 
     notify_all_account_bean_and_chart()
