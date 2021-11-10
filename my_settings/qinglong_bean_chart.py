@@ -84,18 +84,21 @@ def notify_all_account_bean_and_chart():
 
     # 生成图和表
     logger.info("开始生成全部账号的统计图表")
+
+    message_and_image_list.append(("京豆统计图表", ""))
+
     cookies = get_cks(AUTH_JSON)
     for account_idx in range_from_one(len(cookies)):
         if account_idx != 1:
-            message_and_image_list.append(("\n\n", ""))
+            message_and_image_list.append(("\n", ""))
+
+        message_and_image_list.append((get_account_name(account_idx), ""))
 
         message_and_image_list.append(get_bean(account_idx))
         message_and_image_list.append(get_chart(account_idx))
 
-        # message_and_image_list.append(
-        #     (f"账号 {get_account_name(account_idx)} 统计表如下", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
-        # message_and_image_list.append(
-        #     (f"账号 {get_account_name(account_idx)} 统计图如下", f"{QL_DIR}/log/.bean_chart/chart_{account_idx}.jpeg"))
+        # message_and_image_list.append(("", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
+        # message_and_image_list.append(("", f"{QL_DIR}/log/.bean_chart/chart_{account_idx}.jpeg"))
 
     # 发送消息
     send_notify(message_and_image_list)
@@ -105,12 +108,13 @@ def notify_all_account_bean_and_chart():
 def send_notify(message_and_image_list: List[Tuple[str, str]]):
     cq_messages = []
     for message, image in message_and_image_list:
-        cq_messages.append({
-            "type": "text",
-            "data": {
-                "text": message,
-            }
-        })
+        if message != "":
+            cq_messages.append({
+                "type": "text",
+                "data": {
+                    "text": message + "\n",
+                }
+            })
         if image != "":
             # 替换为机器人可以访问到的路径
             if not image.startswith(ROBOT_QL_DIR):
@@ -119,6 +123,12 @@ def send_notify(message_and_image_list: List[Tuple[str, str]]):
                 "type": "image",
                 "data": {
                     "file": f"file:///{image}",
+                }
+            })
+            cq_messages.append({
+                "type": "text",
+                "data": {
+                    "text": "\n",
                 }
             })
 
@@ -152,8 +162,8 @@ def get_bean(account_idx: int) -> Tuple[str, str]:
 def get_chart(account_idx: int):
     res = get_bean_data(int(account_idx))
     if res['code'] == 200:
-        return creat_chart(account_idx, res['data'][3], f'账号{str(account_idx)}', res['data'][0], res['data'][1],
-                           res['data'][2][1:])
+        return creat_chart(account_idx, res['data'][3], f'{get_account_name(account_idx)}',
+                           res['data'][0], res['data'][1], res['data'][2][1:])
     else:
         return f"获取第{account_idx}个账号统计图失败", ""
 
@@ -396,7 +406,7 @@ def creat_bean_count(account_idx, date, beansin, beansout, beanstotal) -> Tuple[
     im.save(save_path)
     logger.info(f'您的账号 {get_account_name(account_idx)} 收支情况 统计表格 已保存到 {save_path}')
 
-    return f"账号 {get_account_name(account_idx)} 统计表如下", os.path.realpath(save_path)
+    return "", os.path.realpath(save_path)
 
 
 def creat_chart(account_idx, xdata, title, bardata, bardata2, linedate):
@@ -509,7 +519,7 @@ def creat_chart(account_idx, xdata, title, bardata, bardata2, linedate):
     qc.to_file(save_path)
     logger.info(f'您的账号 {get_account_name(account_idx)} 收支情况 统计图 已保存到 {save_path}')
 
-    return f"账号 {get_account_name(account_idx)} 统计图如下", os.path.realpath(save_path)
+    return "", os.path.realpath(save_path)
 
 
 class QuickChart:
