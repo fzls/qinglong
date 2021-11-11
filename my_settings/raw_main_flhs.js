@@ -90,9 +90,12 @@ let flhsCookies = ""
 
             if (process.env.flhsCookie && process.env.flhsCookie.indexOf('@') > -1) {
                 flhsCookieArr = process.env.flhsCookie.split('@');
-                console.log(`您选择的是用"@"隔开\n`)
+                console.log(`您选择的是用"@"隔开\n`);
+            } else if (process.env.JD_COOKIE && process.env.JD_COOKIE.indexOf('&') > -1) {
+                flhsCookieArr = process.env.JD_COOKIE.split('&');
+                console.log(`兼容使用"&"隔开的青龙脚本的 JD_COOKIE by风之凌殇\n`);
             } else {
-                flhsCookies = [process.env.flhsCookie]
+                flhsCookies = [process.env.flhsCookie];
             };
             Object.keys(flhsCookies).forEach((item) => {
                 if (flhsCookies[item]) {
@@ -271,7 +274,7 @@ function flhsboxid(timeout = 0) {
             headers: {
                 "Cookie": flhsCookie,
             },
-            
+
         }
         $.get(url, async (err, resp, data) => {
             try {
@@ -314,7 +317,7 @@ function flhsboxreceive(timeout = 0) {
             body: `{
                 "config_id": ${boxid}
               }`
-            
+
         }
         $.post(url, async (err, resp, data) => {
             try {
@@ -358,7 +361,7 @@ function flhsboxdbreceive(timeout = 0) {
                 "welfare_record_id": ${boxdbid},
                 "welfare_type": ${boxdbtype}
               }`
-            
+
         }
         $.post(url, async (err, resp, data) => {
             try {
