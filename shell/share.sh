@@ -125,16 +125,16 @@ link_shell() {
 
 define_cmd() {
     local cmd_prefix cmd_suffix
-    if type task >/dev/null 2>&1; then
+    if type task &>/dev/null; then
         cmd_suffix=""
-        if [[ -x "$dir_shell/task.sh" ]]; then
+        if [[ -f "$dir_shell/task.sh" ]]; then
             cmd_prefix=""
         else
             cmd_prefix="bash "
         fi
     else
         cmd_suffix=".sh"
-        if [[ -x "$dir_shell/task.sh" ]]; then
+        if [[ -f "$dir_shell/task.sh" ]]; then
             cmd_prefix="$dir_shell/"
         else
             cmd_prefix="bash $dir_shell/"
@@ -211,12 +211,12 @@ fix_config() {
 }
 
 npm_install_sub() {
-    if [[ $is_termux -eq 1 ]]; then
-        npm install --production --no-save --no-bin-links --registry=https://registry.npm.taobao.org || npm install --production --no-bin-links --no-save
-    elif ! type pnpm >/dev/null 2>&1; then
-        npm install --production --no-save --registry=https://registry.npm.taobao.org || npm install --production --no-save
+    if [ $is_termux -eq 1 ]; then
+        npm install --production --no-bin-links --registry=https://registry.npm.taobao.org || npm install --production --no-bin-links
+    elif ! type pnpm &>/dev/null; then
+        npm install --production --registry=https://registry.npm.taobao.org || npm install --production
     else
-        pnpm install --prod
+        pnpm install --production --registry=https://registry.npm.taobao.org || pnpm install --production
     fi
 }
 
@@ -259,12 +259,6 @@ update_depend() {
     if [[ ! -s $dir_scripts/package.json ]] || [[ $(diff $dir_sample/package.json $dir_scripts/package.json) ]]; then
         cp -f $dir_sample/package.json $dir_scripts/package.json
         npm_install_2 $dir_scripts
-    fi
-
-    if [[ ! -s $dir_scripts/requirements.txt ]] || [[ $(diff $dir_sample/requirements.txt $dir_scripts/requirements.txt) ]]; then
-        cp -f $dir_sample/requirements.txt $dir_scripts/requirements.txt
-        cd $dir_scripts
-        pip3 install -r $dir_scripts/requirements.txt
     fi
 
     cd $dir_current
