@@ -55,7 +55,6 @@ jobs:
           images: |
             ${{ github.repository }}
             ghcr.io/${{ github.repository }}
-            ccr.ccs.tencentyun.com/${{ github.repository }}
           # generate Docker tags based on the following events/attributes
           #   nightly, master, pr-2, 1.2.3, 1.2, 1
           tags: |
