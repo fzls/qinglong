@@ -33,7 +33,7 @@ jobs:
 
       - name: copy to static repo
         env:
-          GITHUB_REPO: github.com/fzls/qinglong-static
+          GITHUB_REPO: github.com/${{ github.repository_owner }}/qinglong-static
         run: |
           mkdir -p static
           cd ./static
@@ -104,6 +104,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
+          build-args: MAINTAINER=${{ github.repository_owner }}
           platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/s390x
           context: docker/
           push: true
