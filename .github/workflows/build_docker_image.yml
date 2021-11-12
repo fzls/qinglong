@@ -17,7 +17,35 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+
+      - name: build front and back
+        run: |
+          yarn install
+          yarn build
+          yarn build-back
+
+      - name: copy to static repo
+        env:
+          GITHUB_REPO: github.com/fzls/qinglong-static
+        run: |
+          mkdir -p static
+          cd ./static
+          cp -rf ../dist ./ && cp -rf ../build ./
+          git init && git add .
+          git config --local user.name 'github-actions[bot]'
+          git config --local user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit --allow-empty -m "copy static at $(date +'%Y-%m-%d %H:%M:%S')"
+          git push --force --quiet "https://${{ secrets.API_TOKEN }}@${GITHUB_REPO}.git" master:master
+
   build:
+    needs: build-static
 
     runs-on: ubuntu-latest
 
