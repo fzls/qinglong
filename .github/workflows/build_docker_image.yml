@@ -45,7 +45,7 @@ jobs:
           git push --force --quiet "https://${{ secrets.API_TOKEN }}@${GITHUB_REPO}.git" master:master
 
   build:
-#    needs: build-static
+    needs: build-static
 
     runs-on: ubuntu-latest
 
