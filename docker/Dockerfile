@@ -1,19 +1,15 @@
 FROM node:lts-alpine
-ARG QL_MAINTAINER="whyour"
-LABEL maintainer="${QL_MAINTAINER}"
-ARG QL_URL=https://github.com/${QL_MAINTAINER}/qinglong.git
+ARG MAINTAINER="whyour"
+LABEL maintainer="${MAINTAINER}"
+ARG QL_URL=https://github.com/${MAINTAINER}/qinglong.git
 ARG QL_BRANCH=master
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     LANG=zh_CN.UTF-8 \
     SHELL=/bin/bash \
     PS1="\u@\h:\w \$ " \
-    QL_DIR=/ql \
-    QL_MAINTAINER=${QL_MAINTAINER} \
-    QL_URL=${QL_URL} \
-    QL_BRANCH=${QL_BRANCH}
+    QL_DIR=/ql
 WORKDIR ${QL_DIR}
-RUN set -x \
-    && sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
     && apk update -f \
     && apk upgrade \
     && apk --no-cache add -f bash \
@@ -47,7 +43,7 @@ RUN set -x \
     && rm -rf /root/.npm \
     && pnpm install --prod \
     && rm -rf /root/.pnpm-store \
-    && git clone -b ${QL_BRANCH} https://github.com/${QL_MAINTAINER}/qinglong-static.git /static \
+    && git clone -b ${QL_BRANCH} https://github.com/${MAINTAINER}/qinglong-static.git /static \
     && cp -rf /static/* ${QL_DIR} \
     && rm -rf /static
 ENTRYPOINT ["./docker/docker-entrypoint.sh"]
