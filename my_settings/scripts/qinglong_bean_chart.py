@@ -59,6 +59,7 @@ except:
 
 FONT_FILE = f'{QL_DIR}/jbot/font/jet.ttf'
 AUTH_JSON = f"{QL_DIR}/config/auth.json"
+ENV_DB = f"{QL_DIR}/db/env.db"
 
 SAVE_DIR = f"{QL_DIR}/log/.bean_chart"
 
@@ -221,19 +222,30 @@ user_pt_pin_to_nickname = {}
 
 
 def update_user_nicknames():
-    for idx in range_from_one(5):
-        res = None
-        try:
-            api = f"{NINJA_API_ADDR}/users"
-            res = session.get(api).json()
-            for user in res['data']:
-                user_pt_pin_to_nickname[user['pt_pin']] = user['nickName']
+    with open(ENV_DB, 'r', encoding='utf-8') as f:
+        envs = f.readlines()
 
-            logger.info("更新用户昵称映射完成")
-            return
-        except Exception as e:
-            logger.warning(f"第 {idx} 次 update_user_nicknames失败了, res={res}, e={e}")
+    for env_json in envs:
+        env = json.loads(env_json)
+        if env['name'] != "JD_COOKIE":
             continue
+
+        cookie = env['value']
+        pt_pin = parse_pt_pin(cookie)
+
+        nickname = pt_pin
+        for remark in env['remarks'].split(';'):
+            if remark == "":
+                continue
+
+            k, v = remark.split('=')
+            if k != "remark":
+                continue
+
+            nickname = v
+            break
+
+        user_pt_pin_to_nickname[pt_pin] = nickname
 
 
 def get_account_name(account_idx: int) -> str:
@@ -243,17 +255,23 @@ def get_account_name(account_idx: int) -> str:
     cookies = get_cks(AUTH_JSON)
     if len(cookies) != 0:
         ck = cookies[account_idx - 1]
-        pt_pin = ""
-        for kv in ck.split(';'):
-            if 'pt_pin' in kv:
-                pt_pin = kv.split('=')[1]
-                break
+        pt_pin = parse_pt_pin(ck)
 
         if pt_pin != "" and pt_pin in user_pt_pin_to_nickname:
             nickname = user_pt_pin_to_nickname[pt_pin]
             return f"{account_idx} - {nickname}"
 
     return f"{account_idx}"
+
+
+def parse_pt_pin(cookie: str) -> str:
+    pt_pin = ""
+    for kv in cookie.split(';'):
+        if 'pt_pin' in kv:
+            pt_pin = kv.split('=')[1]
+            break
+
+    return pt_pin
 
 
 def env_manage_QL(fun, envdata, token):
