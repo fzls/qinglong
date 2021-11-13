@@ -33,15 +33,14 @@ services:
     ports:
       - "0.0.0.0:5703:3400"
 
-## 暂时不需要这个，有ninja够了，自己去网页里取cookie也不算太麻烦
-#  nvjdc:
-#    image: nolanhzy/nvjdc:latest
-#    container_name: nvjdc
-#    restart: unless-stopped
-#    tty: true
-#    privileged: true
-#    ports:
-#      - "0.0.0.0:5704:80"
-#    volumes:
-#      - ./data/nvjdc/Config.json:/app/Config/Config.json:ro
-#      - ./data/nvjdc/.local-chromium:/app/.local-chromium
+  nvjdc:
+    image: nolanhzy/nvjdc:latest
+    container_name: nvjdc
+    restart: unless-stopped
+    tty: true
+    privileged: true
+    ports:
+      - "0.0.0.0:5704:80"
+    volumes:
+      - ./data/nvjdc/Config.json:/app/Config/Config.json:ro
+      - ./data/nvjdc/.local-chromium:/app/.local-chromium
