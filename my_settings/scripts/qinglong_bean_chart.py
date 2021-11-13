@@ -40,7 +40,8 @@ logger.addHandler(consoleHandler)
 
 # 基础配置
 QL_DIR = "/ql"
-ROBOT_QL_DIR = "D:/_codes/js/qinglong/data"
+# ROBOT_QL_DIR = "D:/_codes/js/qinglong/data"
+ROBOT_QL_DIR = "/root/qinglong/data"
 QL_API_ADDR = "http://qinglong:5700/api"
 NINJA_API_ADDR = "http://localhost:5701/api"
 QUICK_CHART_ADDR = "http://quickchart:3400"
