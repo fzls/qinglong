@@ -17,10 +17,10 @@ services:
       - ./data/jbot:/ql/jbot
       - ./data/scripts:/ql/scripts
       - ./data/repo:/ql/repo
-      - ./data/ninja:/ql/ninja
+#      - ./data/ninja:/ql/ninja
     ports:
       - "0.0.0.0:5700:5700"
-      - "0.0.0.0:5701:5701"
+#      - "0.0.0.0:5701:5701"
     environment:
       - ENABLE_HANGUP=true
       - ENABLE_WEB_PANEL=true
