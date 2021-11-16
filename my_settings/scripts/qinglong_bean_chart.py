@@ -91,9 +91,9 @@ def notify_all_account_bean_and_chart():
 
     cookies = get_cks(AUTH_JSON)
     for account_idx in range_from_one(len(cookies)):
-        if account_idx != 1:
-            message_and_image_list.append(("\n", ""))
-
+        # if account_idx != 1:
+        #     message_and_image_list.append(("\n", ""))
+        #
         # 账号信息
         message_and_image_list.append((get_account_name(account_idx), ""))
 
@@ -102,7 +102,7 @@ def notify_all_account_bean_and_chart():
         bean_res = get_bean_data(account_idx)
 
         # 制作豆子统计图表
-        message_and_image_list.append(get_bean(account_idx, bean_res))
+        # message_and_image_list.append(get_bean(account_idx, bean_res))
         message_and_image_list.append(get_chart(account_idx, bean_res))
 
         # message_and_image_list.append(("", f"{QL_DIR}/log/.bean_chart/bean_{account_idx}.jpeg"))
@@ -234,17 +234,23 @@ def update_user_nicknames():
         cookie = env['value']
         pt_pin = parse_pt_pin(cookie)
 
+        # 先使用pt_pin
         nickname = pt_pin
-        for remark in env['remarks'].split(';'):
-            if remark == "":
-                continue
+        if 'remarks' in env:
+            # 如果有备注，则使用备注
+            nickname = env['remarks']
 
-            k, v = remark.split('=')
-            if k != "remark":
-                continue
+            # 如果备注中有remark=字样
+            for remark in env['remarks'].split(';'):
+                if remark == "" or '=' not in remark:
+                    continue
 
-            nickname = v
-            break
+                k, v = remark.split('=')
+                if k != "remark":
+                    continue
+
+                nickname = v
+                break
 
         user_pt_pin_to_nickname[pt_pin] = nickname
 
