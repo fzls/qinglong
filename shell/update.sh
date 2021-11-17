@@ -104,7 +104,8 @@ add_cron() {
     local detail=""
     cd $dir_scripts
     for file in $(cat $list_add); do
-        local file_name=${file/${path}\_/}
+        local file_name=${file/${path}\//}
+        file_name=${file_name/${path}\_/}
         if [[ -f $file ]]; then
             cron_line=$(
                 perl -ne "{
@@ -317,17 +318,11 @@ patch_version() {
 reload_pm2() {
     pm2 l &>/dev/null
 
-    if [[ $(pm2 info panel 2>/dev/null) ]]; then
-        pm2 reload panel --source-map-support --time &>/dev/null
-    else
-        pm2 start $dir_root/build/app.js -n panel --source-map-support --time &>/dev/null
-    fi
+    pm2 delete panel --source-map-support --time &>/dev/null
+    pm2 start $dir_root/build/app.js -n panel --source-map-support --time &>/dev/null
 
-    if [[ $(pm2 info schedule 2>/dev/null) ]]; then
-        pm2 reload schedule --source-map-support --time &>/dev/null
-    else
-        pm2 start $dir_root/build/schedule.js -n schedule --source-map-support --time &>/dev/null
-    fi
+    pm2 delete schedule --source-map-support --time &>/dev/null
+    pm2 start $dir_root/build/schedule.js -n schedule --source-map-support --time &>/dev/null
 }
 
 ## 对比脚本
@@ -390,16 +385,11 @@ gen_list_repo() {
     if [[ $blackword ]]; then
         files=$(echo "$files" | egrep -v $blackword)
     fi
-    if [[ $dependence ]]; then
-        cd ${dir_scripts}
-        depInScripts=$(eval $cmd | sed 's/^..//' | egrep -v $uniq_path | egrep $dependence)
-        for dep in ${depInScripts}; do
-            file_path=$(dirname $dep)
-            [[ ! $file_path =~ "/" ]] && file_path=""
-            make_dir "${dir_scripts}/${uniq_path}/${file_path#*/}"
-            cp -f $dep "${dir_scripts}/${uniq_path}/${file_path#*/}"
-        done
 
+    cp -f $file_notify_js "${dir_scripts}/${uniq_path}"
+    cp -f $file_notify_py "${dir_scripts}/${uniq_path}"
+
+    if [[ $dependence ]]; then
         cd ${repo_path}
         results=$(eval $cmd | sed 's/^..//' | egrep $dependence)
         for _file in ${results}; do
@@ -408,6 +398,11 @@ gen_list_repo() {
             cp -f $_file "${dir_scripts}/${uniq_path}/${file_path}"
         done
     fi
+    
+    if [[ -d $dir_dep ]]; then
+        cp -f $dir_dep/* "${dir_scripts}/${uniq_path}" &>/dev/null
+    fi
+
     for file in ${files}; do
         filename=$(basename $file)
         cp -f $file "$dir_scripts/${uniq_path}/${filename}"

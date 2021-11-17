@@ -1,10 +1,15 @@
-import { getFileContentByName, getLastModifyFilePath } from '../config/util';
+import {
+  fileExist,
+  getFileContentByName,
+  getLastModifyFilePath,
+} from '../config/util';
 import { Router, Request, Response, NextFunction } from 'express';
 import { Container } from 'typedi';
 import { Logger } from 'winston';
 import config from '../config';
 import * as fs from 'fs';
 import { celebrate, Joi } from 'celebrate';
+import path from 'path';
 const route = Router();
 
 export default (app: Router) => {
@@ -16,35 +21,55 @@ export default (app: Router) => {
       const logger: Logger = Container.get('logger');
       try {
         const fileList = fs.readdirSync(config.scriptPath, 'utf-8');
+
+        let result = [];
+        for (let i = 0; i < fileList.length; i++) {
+          const fileOrDir = fileList[i];
+          const fPath = path.join(config.scriptPath, fileOrDir);
+          const dirStat = fs.statSync(fPath);
+          if (['node_modules'].includes(fileOrDir)) {
+            continue;
+          }
+
+          if (dirStat.isDirectory()) {
+            const childFileList = fs.readdirSync(fPath, 'utf-8');
+            let children = [];
+            for (let j = 0; j < childFileList.length; j++) {
+              const childFile = childFileList[j];
+              const sPath = path.join(config.scriptPath, fileOrDir, childFile);
+              const _fileExist = await fileExist(sPath);
+              if (_fileExist && fs.statSync(sPath).isFile()) {
+                const statObj = fs.statSync(sPath);
+                children.push({
+                  title: childFile,
+                  value: childFile,
+                  key: `${fileOrDir}-${childFile}`,
+                  mtime: statObj.mtimeMs,
+                  parent: fileOrDir,
+                });
+              }
+            }
+            result.push({
+              title: fileOrDir,
+              value: fileOrDir,
+              key: fileOrDir,
+              mtime: dirStat.mtimeMs,
+              disabled: true,
+              children: children.sort((a, b) => b.mtime - a.mtime),
+            });
+          } else {
+            result.push({
+              title: fileOrDir,
+              value: fileOrDir,
+              key: fileOrDir,
+              mtime: dirStat.mtimeMs,
+            });
+          }
+        }
+
         res.send({
           code: 200,
-          data: fileList.map((x) => {
-            if (fs.lstatSync(config.scriptPath + x).isDirectory()) {
-              const childFileList = fs.readdirSync(
-                config.scriptPath + x,
-                'utf-8',
-              );
-              return {
-                title: x,
-                value: x,
-                key: x,
-                disabled: true,
-                children: childFileList.map((y) => {
-                  const statObj = fs.statSync(`${config.scriptPath}${x}/${y}`);
-                  return {
-                    title: y,
-                    value: y,
-                    key: y,
-                    mtime: statObj.mtimeMs,
-                    parent: x,
-                  };
-                }),
-              };
-            } else {
-              const statObj = fs.statSync(config.scriptPath + x);
-              return { title: x, value: x, key: x, mtime: statObj.mtimeMs };
-            }
-          }),
+          data: result,
         });
       } catch (e) {
         logger.error('🔥 error: %o', e);
@@ -94,6 +119,9 @@ export default (app: Router) => {
         }
         if (!path.endsWith('/')) {
           path += '/';
+        }
+        if (!path.startsWith('/')) {
+          path = `${config.scriptPath}${path}`;
         }
         if (config.writePathList.every((x) => !path.startsWith(x))) {
           return res.send({
@@ -159,15 +187,17 @@ export default (app: Router) => {
     celebrate({
       body: Joi.object({
         filename: Joi.string().required(),
+        path: Joi.string().allow(''),
       }),
     }),
     async (req: Request, res: Response, next: NextFunction) => {
       const logger: Logger = Container.get('logger');
       try {
-        let { filename } = req.body as {
+        let { filename, path } = req.body as {
           filename: string;
+          path: string;
         };
-        const filePath = `${config.scriptPath}${filename}`;
+        const filePath = `${config.scriptPath}${path}/${filename}`;
         fs.unlinkSync(filePath);
         res.send({ code: 200 });
       } catch (e) {

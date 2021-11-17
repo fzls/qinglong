@@ -118,13 +118,17 @@ const Env = ({ headerStyle, isPhone, theme }: any) => {
       dataIndex: 'value',
       key: 'value',
       align: 'center' as const,
-      width: '44%',
+      width: '35%',
       ellipsis: {
         showTitle: false,
       },
       render: (text: string, record: any) => {
         return (
-          <Tooltip placement="topLeft" title={text}>
+          <Tooltip
+            placement="topLeft"
+            title={text}
+            trigger={['hover', 'click']}
+          >
             <span>{text}</span>
           </Tooltip>
         );
@@ -135,6 +139,33 @@ const Env = ({ headerStyle, isPhone, theme }: any) => {
       dataIndex: 'remarks',
       key: 'remarks',
       align: 'center' as const,
+    },
+    {
+      title: '更新时间',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      align: 'center' as const,
+      width: 165,
+      ellipsis: {
+        showTitle: false,
+      },
+      render: (text: string, record: any) => {
+        const language = navigator.language || navigator.languages[0];
+        const date = new Date(text)
+          .toLocaleString(language, {
+            hour12: false,
+          })
+          .replace(' 24:', ' 00:');
+        return (
+          <Tooltip
+            placement="topLeft"
+            title={date}
+            trigger={['hover', 'click']}
+          >
+            <span>{date}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '状态',
@@ -505,7 +536,7 @@ const Env = ({ headerStyle, isPhone, theme }: any) => {
           dataSource={value}
           rowKey="_id"
           size="middle"
-          scroll={{ x: 768, y: tableScrollHeight }}
+          scroll={{ x: 1000, y: tableScrollHeight }}
           components={components}
           loading={loading}
           onRow={(record: any, index: number) => {
